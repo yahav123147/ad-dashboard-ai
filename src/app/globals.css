@@ -1,0 +1,560 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* ===== Design System Theme (Tailwind v4) ===== */
+@theme {
+  /* Colors - Dark Premium ("Yahav Style") */
+  --color-bg-primary: #0a0a0a;
+  --color-bg-secondary: #1a1a1a;
+  --color-bg-card: #111111;
+
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #a3a3a3;
+  --color-text-muted: #737373;
+
+  --color-gold: #d4af37;
+  --color-gold-light: #e5c158;
+  --color-cta-yellow: #f59e0b;
+
+  --color-border-gold: #d4af37;
+  --color-border-subtle: #262626;
+  --color-border-card: #333333;
+
+  /* Colors - Dark Tech Rebel (Orange Accent) */
+  --color-accent-orange: #FF6B2B;
+  --color-accent-orange-light: #FF8F5C;
+  --color-accent-cyan: #22D3EE;
+  --color-danger: #EF4444;
+
+  /* Font Family */
+  --font-assistant: "Assistant", "Heebo", Arial, sans-serif;
+
+  /* Box Shadows */
+  --shadow-gold-glow: 0 0 20px rgba(212, 175, 55, 0.4);
+  --shadow-gold-glow-intense: 0 0 40px rgba(212, 175, 55, 0.6);
+  --shadow-orange-glow: 0 0 20px rgba(255, 107, 43, 0.4);
+  --shadow-orange-glow-intense: 0 0 40px rgba(255, 107, 43, 0.6);
+  --shadow-natural: 6px 6px 9px rgba(0, 0, 0, 0.2);
+  --shadow-deep: 12px 12px 50px rgba(0, 0, 0, 0.4);
+  --shadow-glow-soft: 0 0 70px rgba(0, 0, 0, 0.15);
+
+  /* Border Radius Scale */
+  --radius-sm: 7px;
+  --radius-md: 15px;
+  --radius-lg: 25px;
+  --radius-xl: 35px;
+  --radius-full: 54px;
+  --radius-2xl: 1.5rem;
+}
+
+/* ===== Base Styles ===== */
+@layer base {
+  :root {
+    /* CSS Variables for JS access */
+    --accent-glow: rgba(212, 175, 55, 0.3);
+  }
+
+  html {
+    font-family: var(--font-assistant);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-bg-primary text-text-primary;
+    direction: rtl;
+    text-align: right;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* RTL adjustments */
+  [dir="rtl"] {
+    text-align: right;
+  }
+
+  /* Selection color */
+  ::selection {
+    background-color: rgba(212, 175, 55, 0.3);
+    color: #ffffff;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #333333;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #d4af37;
+  }
+}
+
+/* ===== Component Styles ===== */
+@layer components {
+  /* CTA Button - BIG and prominent */
+  .cta-button {
+    @apply bg-cta-yellow text-black py-5 px-10 rounded-xl font-extrabold text-xl lg:text-2xl;
+    @apply transition-transform duration-200;
+    min-height: 56px;
+    letter-spacing: -0.01em;
+  }
+
+  .cta-button:hover {
+    transform: scale(1.02);
+  }
+
+  .cta-button:active {
+    transform: scale(0.98);
+  }
+
+  /* Gold border card */
+  .gold-card {
+    @apply border border-gold rounded-2xl p-5 lg:p-8;
+    @apply bg-bg-card;
+  }
+
+  .gold-card:hover {
+    box-shadow: var(--shadow-gold-glow);
+  }
+
+  /* Section spacing - generous whitespace */
+  .section {
+    @apply py-16 lg:py-32 px-5 lg:px-8;
+  }
+
+  /* Container */
+  .container-narrow {
+    @apply max-w-3xl mx-auto;
+  }
+
+  .container-wide {
+    @apply max-w-5xl mx-auto;
+  }
+}
+
+/* ===== Utilities ===== */
+@layer utilities {
+  /* Gold glow effect */
+  .gold-glow {
+    box-shadow: var(--shadow-gold-glow);
+  }
+
+  .gold-glow-intense {
+    box-shadow: var(--shadow-gold-glow-intense);
+  }
+
+  /* Text gradient */
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #d4af37 0%, #e5c158 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Animation utilities */
+  .animate-pulse-gold {
+    animation: pulse-gold 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-gold {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 40px rgba(212, 175, 55, 0.5);
+    }
+  }
+
+  /* Shimmer text effect */
+  .text-shimmer-gold {
+    background: linear-gradient(
+      110deg,
+      #d4af37 0%,
+      #f5d76e 25%,
+      #d4af37 50%,
+      #f5d76e 75%,
+      #d4af37 100%
+    );
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 4s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 100% 50%; }
+    50% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+  }
+
+  /* Radial gold glow background - STRONG visible glow */
+  .bg-radial-glow {
+    background: radial-gradient(
+      ellipse 800px 500px at 50% 20%,
+      rgba(212, 175, 55, 0.15) 0%,
+      rgba(212, 175, 55, 0.04) 40%,
+      transparent 70%
+    );
+  }
+
+  /* Animated gold divider */
+  .divider-gold {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(212, 175, 55, 0.5) 50%,
+      transparent 100%
+    );
+  }
+
+  /* Glass card */
+  .glass-card {
+    background: rgba(17, 17, 17, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+  }
+
+  /* Animated gradient border on hover */
+  .gradient-border-hover {
+    position: relative;
+    background-clip: padding-box;
+  }
+  .gradient-border-hover::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: conic-gradient(
+      from var(--border-angle, 0deg),
+      transparent 30%,
+      rgba(255, 184, 0, 0.4) 50%,
+      transparent 70%
+    );
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .gradient-border-hover:hover::before {
+    opacity: 1;
+    animation: rotate-border 3s linear infinite;
+  }
+  @keyframes rotate-border {
+    to { --border-angle: 360deg; }
+  }
+
+  /* Comparison cards responsive */
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: stretch;
+  }
+  @media (max-width: 640px) {
+    .comparison-grid {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    .comparison-grid > :first-child {
+      border-radius: 16px 16px 0 0 !important;
+      border-left: none !important;
+    }
+    .comparison-grid > :last-child {
+      border-radius: 0 0 16px 16px !important;
+      border-right: none !important;
+    }
+  }
+
+  /* Strikethrough animation - apply to an INLINE span wrapping the text */
+  .strikethrough-line {
+    position: relative;
+    display: inline;
+  }
+  .strikethrough-line::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 0;
+    width: 0;
+    height: 2px;
+    background: #d4af37;
+    animation: strike 0.6s ease-out forwards;
+    animation-delay: 0.3s;
+  }
+  @keyframes strike {
+    to { width: 100%; }
+  }
+
+  /* Red glow for pain cards */
+  .red-glow {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
+  }
+
+  /* Progress bar */
+  .progress-bar-gold {
+    background: linear-gradient(90deg, #d4af37, #f59e0b);
+    transition: width 50ms linear;
+  }
+
+  /* ===== Gold Highlight Banner (key messages) ===== */
+  .gold-banner {
+    background: rgba(212, 175, 55, 0.08);
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    border-radius: 1rem;
+    padding: 1.5rem 2rem;
+  }
+  @media (min-width: 1024px) {
+    .gold-banner {
+      padding: 2rem 3rem;
+    }
+  }
+
+  /* ===== Hero Image Placeholder ===== */
+  .hero-image-frame {
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 1rem;
+    overflow: hidden;
+    background: linear-gradient(135deg, #111 0%, #1a1a1a 100%);
+    aspect-ratio: 16/9;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* ===== Emotional Design: Pain/Relief Backgrounds ===== */
+  .bg-pain {
+    background: linear-gradient(
+      180deg,
+      #0a0a0a 0%,
+      rgba(127, 29, 29, 0.08) 50%,
+      #0a0a0a 100%
+    );
+  }
+
+  .bg-relief {
+    background: linear-gradient(
+      180deg,
+      #111111 0%,
+      rgba(212, 175, 55, 0.06) 50%,
+      #111111 100%
+    );
+  }
+
+  /* ===== Light Section (Hybrid theme) ===== */
+  .bg-light {
+    background: #f2f2f2;
+    color: #1a1a1a;
+  }
+
+  .bg-light-gradient {
+    background: linear-gradient(180deg, #f2f2f2 0%, #e8e8e8 50%, #f2f2f2 100%);
+    color: #1a1a1a;
+  }
+
+  .divider-dark-to-light {
+    height: 120px;
+    background: linear-gradient(180deg, #0a0a0a 0%, #f2f2f2 100%);
+  }
+
+  .divider-light-to-dark {
+    height: 120px;
+    background: linear-gradient(180deg, #f2f2f2 0%, #0a0a0a 100%);
+  }
+
+  .light-card {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 1rem;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+  }
+
+  /* ===== Scroll-snap Carousel ===== */
+  .scroll-snap-x {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .scroll-snap-x::-webkit-scrollbar {
+    display: none;
+  }
+  .snap-center {
+    scroll-snap-align: center;
+  }
+
+  /* ===== Risk Reversal Strip ===== */
+  .risk-strip {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(212, 175, 55, 0.06) 50%,
+      transparent 100%
+    );
+    border-top: 1px solid rgba(212, 175, 55, 0.15);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+  }
+
+  /* ===== Urgency Bar ===== */
+  .urgency-bar {
+    background: linear-gradient(90deg, #1a1a1a 0%, #111111 100%);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+  }
+
+  /* ===== Multi-step form progress ===== */
+  .step-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    transition: all 0.3s;
+  }
+  .step-dot-active {
+    background: #d4af37;
+    color: #000;
+  }
+  .step-dot-done {
+    background: #d4af37;
+    color: #000;
+  }
+  .step-dot-pending {
+    background: #262626;
+    color: #737373;
+  }
+  .step-line {
+    height: 2px;
+    flex: 1;
+    transition: background 0.3s;
+  }
+  .step-line-active {
+    background: #d4af37;
+  }
+  .step-line-pending {
+    background: #262626;
+  }
+
+  /* ===== Orange Accent Utilities ===== */
+  .orange-glow {
+    box-shadow: var(--shadow-orange-glow);
+  }
+  .orange-glow-intense {
+    box-shadow: var(--shadow-orange-glow-intense);
+  }
+  .text-gradient-orange {
+    background: linear-gradient(90deg, #FF6B2B 0%, #FF8F5C 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .cta-orange {
+    background: linear-gradient(90deg, #FF6B2B 0%, #FF8F5C 64%);
+    color: #000000;
+    font-weight: 800;
+    border-radius: var(--radius-xl);
+    padding: 1.25rem 3rem;
+    transition: all 0.3s ease;
+    min-height: 56px;
+  }
+  .cta-orange:hover {
+    box-shadow: 0 0 30px rgba(255, 107, 43, 0.5);
+    transform: scale(1.02);
+  }
+  .cta-orange:active {
+    transform: scale(0.98);
+  }
+  .bg-radial-glow-orange {
+    background: radial-gradient(
+      ellipse 800px 500px at 50% 20%,
+      rgba(255, 107, 43, 0.12) 0%,
+      rgba(255, 107, 43, 0.03) 40%,
+      transparent 70%
+    );
+  }
+  .animate-pulse-orange {
+    animation: pulse-orange 2.5s ease-in-out infinite;
+  }
+  @keyframes pulse-orange {
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 107, 43, 0.3); }
+    50% { box-shadow: 0 0 50px rgba(255, 107, 43, 0.6); }
+  }
+  .divider-orange {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 107, 43, 0.5) 50%, transparent 100%);
+  }
+
+  /* ===== Glassmorphism Cards ===== */
+  .glass-card-dark {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-lg);
+  }
+  .glass-card-orange {
+    background: rgba(255, 107, 43, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 107, 43, 0.2);
+    border-radius: var(--radius-lg);
+  }
+
+  /* ===== Orange Banner (key messages) ===== */
+  .orange-banner {
+    background: rgba(255, 107, 43, 0.08);
+    border: 1px solid rgba(255, 107, 43, 0.3);
+    border-radius: var(--radius-md);
+    padding: 1.5rem 2rem;
+  }
+  .orange-banner-solid {
+    background: #FF6B2B;
+    color: #000000;
+    border-radius: var(--radius-md);
+    padding: 1.5rem 2rem;
+  }
+
+  /* ===== Sticky Mobile CTA ===== */
+  @media (max-width: 768px) {
+    .sticky-mobile-cta {
+      display: block !important;
+    }
+  }
+}
+
+/* Workshop days grid */
+.workshop-days-grid {
+  grid-template-columns: 1fr;
+}
+@media (min-width: 768px) {
+  .workshop-days-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Force date/time inputs to LTR even inside RTL pages.
+   Browsers render the date picker buttons LTR but the field text follows the
+   parent direction — this makes the displayed date consistent and readable. */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+input[type="month"],
+input[type="week"] {
+  direction: ltr;
+  text-align: left;
+}
