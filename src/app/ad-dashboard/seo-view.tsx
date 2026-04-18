@@ -18,6 +18,10 @@ import { SeoOverview } from "./seo/seo-overview";
 import { SeoKeywords } from "./seo/seo-keywords";
 import { SeoContent } from "./seo/seo-content";
 import { SeoTasks } from "./seo/seo-tasks";
+import dynamic from "next/dynamic";
+const SeoStrategy = dynamic(() => import("./seo/seo-strategy").then(m => ({ default: m.SeoStrategy })), {
+  loading: () => <div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" /></div>,
+});
 
 const LS_KEY = "seo_connections";
 
@@ -437,7 +441,7 @@ export function SeoView({ onBack }: { onBack: () => void }) {
     }
   }, [connections.wordpress, scPages]);
 
-  const generateTasks = useCallback(async () => {
+  const generateTasks = useCallback(async (retryCount = 0) => {
     if (!connections.google.connected) return;
     setLoadingTasks(true);
     setConnectError(null);
@@ -449,10 +453,15 @@ export function SeoView({ onBack }: { onBack: () => void }) {
       });
 
       const data = await res.json();
-      if (data.tasks) {
+      if (data.tasks && data.tasks.length > 0) {
         setTasks(data.tasks);
         setTasksSummary(data.summary || "");
         setTab("tasks");
+      } else if (data.canRetry && retryCount < 1) {
+        // Auto-retry once on timeout
+        console.log("Task generation timed out, retrying...");
+        setLoadingTasks(false);
+        return generateTasks(retryCount + 1);
       } else if (data.error) {
         setConnectError(data.error);
         setTab("tasks");
@@ -515,6 +524,7 @@ export function SeoView({ onBack }: { onBack: () => void }) {
     { key: "keywords", label: "מילות מפתח", icon: "🔑" },
     { key: "content", label: "מאמרים", icon: "📄" },
     { key: "tasks", label: "משימות", icon: "✅" },
+    { key: "strategy", label: "אסטרטגיה", icon: "🎯" },
   ];
 
   return (
@@ -669,7 +679,7 @@ export function SeoView({ onBack }: { onBack: () => void }) {
             <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
               <input
                 type="text"
-                placeholder="https://your-website.com"
+                placeholder="https://yahavrubin.com"
                 value={wpFormUrl}
                 onChange={(e) => setWpFormUrl(e.target.value)}
                 className="rounded-lg border border-gray-200 px-3 py-2 text-xs outline-none focus:border-purple-300"
@@ -758,6 +768,9 @@ export function SeoView({ onBack }: { onBack: () => void }) {
           onTaskUpdate={handleTaskUpdate}
           summary={tasksSummary}
         />
+      )}
+      {tab === "strategy" && (
+        <SeoStrategy connections={connections} keywords={keywords} articles={articles} scPages={scPages} />
       )}
     </div>
   );

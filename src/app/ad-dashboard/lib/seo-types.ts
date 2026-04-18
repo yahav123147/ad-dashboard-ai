@@ -155,4 +155,4 @@ export const SEO_TASK_TYPE_LABELS: Record<string, { icon: string; label: string 
 };
 
 // ─── Tab state ───
-export type SeoTab = "overview" | "keywords" | "content" | "tasks";
+export type SeoTab = "overview" | "keywords" | "content" | "tasks" | "strategy";

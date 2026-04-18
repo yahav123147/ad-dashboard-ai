@@ -114,7 +114,7 @@ function getSeoMeta(post: Record<string, unknown>): {
 
 export async function POST(request: NextRequest) {
   try {
-    const { task, wpCredentials } = await request.json();
+    const { task, wpCredentials, googleToken, googleSiteUrl, ga4PropertyId } = await request.json();
 
     if (!task || !wpCredentials) {
       return NextResponse.json({ error: "Missing task or credentials" }, { status: 400 });
@@ -146,8 +146,133 @@ export async function POST(request: NextRequest) {
     if (seoMeta.seoTitle) log.push(`SEO Title נוכחי: "${seoMeta.seoTitle}"`);
     if (seoMeta.seoDescription) log.push(`SEO Description נוכחי: "${seoMeta.seoDescription}"`);
 
-    // Step 2: Ask AI what changes to make
+    // Step 2: Fetch Search Console data for THIS specific page
+    let pageKeywords: { query: string; clicks: number; impressions: number; ctr: number; position: number }[] = [];
+    let pageTotalClicks = 0;
+    let pageTotalImpressions = 0;
+    let pageAvgPosition = 0;
+    let pageAvgCtr = 0;
+
+    if (googleToken && googleSiteUrl) {
+      try {
+        log.push("שולף נתוני Search Console לדף הזה...");
+        const now = new Date();
+        const monthAgo = new Date(now);
+        monthAgo.setDate(monthAgo.getDate() - 30);
+        const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+        const scRes = await fetch("https://www.googleapis.com/webmasters/v3/sites/" + encodeURIComponent(googleSiteUrl) + "/searchAnalytics/query", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${googleToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            startDate: fmt(monthAgo),
+            endDate: fmt(now),
+            dimensions: ["query"],
+            dimensionFilterGroups: [{ filters: [{ dimension: "page", expression: actualUrl }] }],
+            rowLimit: 20,
+          }),
+        });
+
+        if (scRes.ok) {
+          const scData = await scRes.json();
+          pageKeywords = (scData.rows || []).map((r: { keys: string[]; clicks: number; impressions: number; ctr: number; position: number }) => ({
+            query: r.keys[0],
+            clicks: r.clicks,
+            impressions: r.impressions,
+            ctr: Math.round(r.ctr * 10000) / 100,
+            position: Math.round(r.position * 10) / 10,
+          }));
+          pageTotalClicks = pageKeywords.reduce((s, k) => s + k.clicks, 0);
+          pageTotalImpressions = pageKeywords.reduce((s, k) => s + k.impressions, 0);
+          pageAvgCtr = pageTotalImpressions > 0 ? Math.round((pageTotalClicks / pageTotalImpressions) * 10000) / 100 : 0;
+          pageAvgPosition = pageKeywords.length > 0 ? Math.round(pageKeywords.reduce((s, k) => s + k.position, 0) / pageKeywords.length * 10) / 10 : 0;
+
+          log.push(`נמצאו ${pageKeywords.length} מילות מפתח | ${pageTotalClicks} קליקים | מיקום ממוצע ${pageAvgPosition}`);
+          pageKeywords.slice(0, 5).forEach(k => log.push(`  "${k.query}" — מיקום ${k.position}, ${k.clicks} קליקים, CTR ${k.ctr}%`));
+        }
+      } catch (err) {
+        console.error("SC page data error:", err);
+        log.push("לא הצלחתי לשלוף נתוני Search Console לדף");
+      }
+    }
+
+    // Step 2b: Fetch GA4 data for this specific page
+    let pageBounceRate = -1;
+    let pageAvgDuration = -1;
+    let pageSessions = 0;
+
+    if (googleToken && ga4PropertyId) {
+      try {
+        log.push("שולף נתוני Analytics לדף הזה...");
+        // Extract page path from URL for GA4 filter
+        const pagePath = actualUrl.replace(/https?:\/\/[^/]+/, "").replace(/\/$/, "") || "/";
+
+        const ga4Res = await fetch(`https://analyticsdata.googleapis.com/v1beta/${ga4PropertyId}:runReport`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${googleToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+            dimensions: [{ name: "pagePath" }],
+            metrics: [
+              { name: "sessions" },
+              { name: "bounceRate" },
+              { name: "averageSessionDuration" },
+              { name: "engagedSessions" },
+            ],
+            dimensionFilter: {
+              filter: {
+                fieldName: "pagePath",
+                stringFilter: { matchType: "EXACT", value: pagePath },
+              },
+            },
+          }),
+        });
+
+        if (ga4Res.ok) {
+          const ga4Data = await ga4Res.json();
+          const row = ga4Data.rows?.[0];
+          if (row) {
+            pageSessions = parseInt(row.metricValues[0]?.value || "0");
+            pageBounceRate = Math.round(parseFloat(row.metricValues[1]?.value || "0") * 100) / 100;
+            pageAvgDuration = Math.round(parseFloat(row.metricValues[2]?.value || "0"));
+            const engagedSessions = parseInt(row.metricValues[3]?.value || "0");
+            const engagementRate = pageSessions > 0 ? Math.round((engagedSessions / pageSessions) * 100) : 0;
+
+            log.push(`GA4: ${pageSessions} כניסות | bounce ${pageBounceRate}% | זמן ממוצע ${Math.floor(pageAvgDuration / 60)}:${String(pageAvgDuration % 60).padStart(2, "0")} | engagement ${engagementRate}%`);
+          } else {
+            log.push("GA4: אין נתונים לדף הזה ב-30 הימים האחרונים");
+          }
+        }
+      } catch (err) {
+        console.error("GA4 page data error:", err);
+      }
+    }
+
+    // Step 3: Ask AI what changes to make (with real data!)
     log.push("\nAI מנתח ומכין שינויים...");
+
+    const keywordsSection = pageKeywords.length > 0
+      ? `## נתוני Search Console לדף הזה (30 ימים אחרונים)
+
+סה"כ: ${pageTotalClicks} קליקים | ${pageTotalImpressions} חשיפות | CTR ${pageAvgCtr}% | מיקום ממוצע ${pageAvgPosition}
+
+מילות מפתח שמביאות טראפיק לדף:
+${pageKeywords.map(k => `- "${k.query}" — מיקום ${k.position}, ${k.clicks} קליקים, ${k.impressions} חשיפות, CTR ${k.ctr}%`).join("\n")}
+
+CTR Benchmarks: pos 1=25-35%, pos 2=12-18%, pos 3=8-12%, pos 4-5=5-8%, pos 6-10=2-5%`
+      : "## אין נתוני Search Console זמינים לדף הזה — היזהר עם שינויים";
+
+    const ga4Section = pageSessions > 0
+      ? `## נתוני Google Analytics לדף (30 ימים)
+
+${pageSessions} כניסות | Bounce Rate ${pageBounceRate}% | זמן ממוצע ${Math.floor(pageAvgDuration / 60)}:${String(pageAvgDuration % 60).padStart(2, "0")}
+
+פרשנות:
+- Bounce Rate מעל 70% = ה-title/meta מבטיח משהו שהתוכן לא נותן, או שהתוכן דק
+- Bounce Rate מתחת ל-40% = מצוין, התוכן מתאים לציפיות
+- זמן ממוצע מתחת ל-30 שניות = אנשים לא קוראים, בעיה בתוכן
+- זמן ממוצע מעל 2 דקות = תוכן מעמיק, אל תשנה את הכיוון`
+      : "";
 
     const aiPrompt = `${SEO_EXECUTE_CONTEXT}
 
@@ -160,6 +285,10 @@ export async function POST(request: NextRequest) {
 מילת מפתח: ${task.keyword || "לא צוינה"}
 URL: ${actualUrl}
 
+${keywordsSection}
+
+${ga4Section}
+
 ## מצב נוכחי בוורדפרס
 
 כותרת הדף: "${currentTitle}"
@@ -168,17 +297,25 @@ SEO Description (${seoMeta.plugin}): "${seoMeta.seoDescription || "(ריק)"}"
 תקציר: "${currentExcerpt}"
 תוכן (500 תווים): "${contentPreview.slice(0, 500)}"
 
-## הוראות
+## כללי החלטה קריטיים
 
-בצע את השינויים לפי הכללים למעלה. החזר JSON בלבד:
+1. אל תשנה title שעובד! אם ה-CTR גבוה מהבנצ'מרק למיקום שלו — אל תיגע בו
+2. מילת המפתח שמביאה הכי הרבה קליקים חייבת להישאר ב-title
+3. אם ה-CTR כבר טוב — רק meta description (אם ריק)
+4. כל שינוי חייב להיות מבוסס על הנתונים למעלה, לא על ניחוש
+5. אם אין מה לשנות — החזר null בכל השדות. עדיף לא לשנות מלשבור
+6. אם Bounce Rate מעל 70% — ה-title/meta מבטיח יותר מדי. התאם לתוכן האמיתי
+7. אם זמן שהייה מתחת ל-30 שניות — התוכן לא מספק. ציין זאת בהמלצה
+8. אם Bounce Rate נמוך + זמן שהייה גבוה — התוכן מצוין, אל תשנה כיוון
+
+החזר JSON בלבד:
 {
-  "newSeoTitle": "ה-SEO Title החדש (או null אם לא צריך לשנות)",
+  "newSeoTitle": "ה-SEO Title החדש (או null אם ה-title הנוכחי עובד טוב)",
   "newSeoDescription": "ה-Meta Description החדש (או null)",
-  "newTitle": "כותרת הדף החדשה (או null — בדרך כלל לא צריך לשנות)",
-  "changes": "תיאור: מה שינית, למה, השפעה צפויה"
+  "newTitle": null,
+  "changes": "הסבר מבוסס דאטא: איזה נתון הוביל להחלטה, מה שינית, ולמה. אם לא שינית — הסבר למה"
 }
 
-חשוב: SEO Title ו-Meta Description הם השדות שמופיעים בגוגל, לא הכותרת של הדף.
 כתוב בעברית טבעית. אל תשתמש ב-em dash.`;
 
     const aiResult = await generateJson<{

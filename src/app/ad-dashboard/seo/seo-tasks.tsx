@@ -88,6 +88,9 @@ export function SeoTasks({ tasks, loading, connections, onTaskUpdate, summary }:
             user: connections.wordpress.user,
             appPassword: connections.wordpress.appPassword,
           },
+          googleToken: connections.google.accessToken,
+          googleSiteUrl: connections.google.siteUrl,
+          ga4PropertyId: connections.google.propertyId,
         }),
       });
 
@@ -139,7 +142,9 @@ export function SeoTasks({ tasks, loading, connections, onTaskUpdate, summary }:
     { at: 50, label: "כותב המלצות ספציפיות...", pct: 65 },
     { at: 70, label: "מסיים ניתוח...", pct: 80 },
     { at: 90, label: "כמעט סיים, עוד רגע...", pct: 90 },
-    { at: 120, label: "עדיין עובד... תהליכים מורכבים לוקחים זמן", pct: 95 },
+    { at: 120, label: "עדיין עובד... לוקח קצת יותר הפעם", pct: 93 },
+    { at: 180, label: "מנסה שוב אוטומטית...", pct: 95 },
+    { at: 240, label: "עוד קצת סבלנות...", pct: 97 },
   ];
 
   if (loading) {

@@ -155,6 +155,15 @@ ${JSON.stringify((scPages || []).slice(0, 20).map((p: { page: string; clicks: nu
   } catch (err) {
     console.error("SEO tasks error:", err);
     const msg = err instanceof Error ? err.message : "Task generation failed";
+    const isTimeout = msg.includes("143") || msg.includes("timed out") || msg.includes("SIGTERM");
+
+    if (isTimeout) {
+      return NextResponse.json({
+        error: "הייצור לקח יותר מדי זמן. זה קורה לפעמים כשהמערכת עמוסה.",
+        canRetry: true,
+      }, { status: 504 });
+    }
+
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
