@@ -222,7 +222,7 @@ export function SeoStrategy({ connections, keywords, articles, scPages }: Strate
               dir="ltr"
             />
             <button
-              onClick={generateStrategy}
+              onClick={() => generateStrategy()}
               disabled={!url.trim()}
               className="rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-all"
             >

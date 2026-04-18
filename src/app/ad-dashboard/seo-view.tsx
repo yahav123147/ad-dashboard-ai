@@ -611,7 +611,7 @@ export function SeoView({ onBack }: { onBack: () => void }) {
 
           {connections.google.connected && keywords.length > 0 && (
             <button
-              onClick={generateTasks}
+              onClick={() => generateTasks()}
               disabled={loadingTasks}
               className="mr-auto rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-1.5 text-xs font-semibold text-emerald-700 transition-all hover:bg-emerald-100 disabled:opacity-50"
             >

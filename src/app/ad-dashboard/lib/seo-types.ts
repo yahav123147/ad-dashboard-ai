@@ -125,7 +125,7 @@ export interface SeoTask {
   description: string;
   url?: string;
   keyword?: string;
-  priority: "high" | "medium" | "low";
+  priority: "critical" | "high" | "medium" | "low";
   status: SeoTaskStatus;
   result?: string;
   changes?: SeoTaskChange[];
