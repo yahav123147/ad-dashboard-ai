@@ -1406,6 +1406,10 @@ export function Dashboard({
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [showTokenModal, setShowTokenModal] = useState(false);
+  const [tokenInput, setTokenInput] = useState("");
+  const [tokenSubmitting, setTokenSubmitting] = useState(false);
+  const [tokenError, setTokenError] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<
     Record<string, SyncStatus>
   >({});
@@ -2356,6 +2360,108 @@ export function Dashboard({
         danger={confirmDialog?.danger}
       />
 
+      {showTokenModal && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+          dir="rtl"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !tokenSubmitting) {
+              setShowTokenModal(false);
+            }
+          }}
+        >
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-gray-900">
+                🔗 התחבר ל-Meta עם Access Token
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                הדבק את ה-User Access Token שלך מ-Meta. הוא יישמר מקומית
+                בקובץ <code className="rounded bg-gray-100 px-1 text-xs">.meta-token.json</code>{" "}
+                בתיקיית הפרויקט.
+              </p>
+              <a
+                href="https://developers.facebook.com/tools/explorer/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-block text-xs text-blue-600 underline hover:text-blue-800"
+              >
+                הפק טוקן ב-Graph API Explorer ↗
+              </a>
+            </div>
+
+            <textarea
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value)}
+              disabled={tokenSubmitting}
+              placeholder="EAAB...   (User Access Token)"
+              rows={4}
+              className="w-full rounded-xl border border-gray-300 bg-gray-50 p-3 font-mono text-xs text-gray-900 focus:border-blue-400 focus:bg-white focus:outline-none disabled:opacity-50"
+              dir="ltr"
+              autoFocus
+            />
+
+            {tokenError && (
+              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                ❌ {tokenError}
+              </div>
+            )}
+
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                onClick={() => setShowTokenModal(false)}
+                disabled={tokenSubmitting}
+                className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-600 transition-all hover:bg-gray-50 disabled:opacity-50"
+              >
+                ביטול
+              </button>
+              <button
+                onClick={async () => {
+                  const token = tokenInput.trim();
+                  if (!token) {
+                    setTokenError("הדבק טוקן לפני שמירה");
+                    return;
+                  }
+                  setTokenSubmitting(true);
+                  setTokenError(null);
+                  try {
+                    const res = await fetch(
+                      "/api/ad-dashboard/auth/token",
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ token }),
+                      }
+                    );
+                    const data = await res.json();
+                    if (!res.ok) {
+                      setTokenError(data.error || "שמירת הטוקן נכשלה");
+                      setTokenSubmitting(false);
+                      return;
+                    }
+                    try {
+                      localStorage.removeItem("ad-dashboard-cache");
+                    } catch {
+                      /* ignore */
+                    }
+                    window.location.reload();
+                  } catch (err) {
+                    setTokenError(
+                      err instanceof Error ? err.message : "שגיאת רשת"
+                    );
+                    setTokenSubmitting(false);
+                  }
+                }}
+                disabled={tokenSubmitting}
+                className="rounded-xl border border-blue-300 bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-blue-700 disabled:opacity-50"
+              >
+                {tokenSubmitting ? "מאמת..." : "אישור ושמירה"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Background sync indicator */}
       {isBackgroundSync && (
         <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-blue-50 px-4 py-1.5 text-xs text-blue-600">
@@ -2446,12 +2552,16 @@ export function Dashboard({
             )}
             {!user && (
               <>
-                <a
-                  href="/api/ad-dashboard/auth/login"
+                <button
+                  onClick={() => {
+                    setTokenInput("");
+                    setTokenError(null);
+                    setShowTokenModal(true);
+                  }}
                   className="rounded-xl border border-blue-300 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 transition-all hover:bg-blue-100"
                 >
                   🔗 התחבר ל-Meta
-                </a>
+                </button>
                 <button
                   onClick={loadDemo}
                   className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-600 transition-all hover:border-gray-300 hover:bg-gray-50"
