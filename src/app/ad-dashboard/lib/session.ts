@@ -49,14 +49,19 @@ export async function setSessionData(data: SessionData): Promise<void> {
 export async function getSessionData(): Promise<SessionData | null> {
   const cookieStore = await cookies();
   const cookie = cookieStore.get(COOKIE_NAME);
-  if (!cookie) return null;
-  const payload = verify(cookie.value);
-  if (!payload) return null;
-  try {
-    return JSON.parse(payload) as SessionData;
-  } catch {
-    return null;
+  if (cookie) {
+    const payload = verify(cookie.value);
+    if (payload) {
+      try {
+        return JSON.parse(payload) as SessionData;
+      } catch {
+        /* fall through to file */
+      }
+    }
   }
+
+  const { loadTokenFromFile } = await import("./token-file");
+  return await loadTokenFromFile();
 }
 
 export async function getSession(): Promise<string | null> {
